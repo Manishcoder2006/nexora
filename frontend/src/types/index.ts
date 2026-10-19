@@ -1,0 +1,502 @@
+export type MembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER';
+
+export type AIEmployeeStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE';
+
+export type KnowledgeBaseStatus = 'ACTIVE' | 'INACTIVE';
+
+export type DocumentStatus = 'UPLOADED' | 'QUEUED' | 'PROCESSING' | 'PROCESSED' | 'FAILED' | 'DELETED';
+
+export interface DocumentUploadResponse {
+  document_id: string;
+  job_id: string;
+  status: DocumentStatus;
+  filename: string;
+  file_size: number;
+  created_at: string;
+}
+
+export interface DocumentStatusResponse {
+  document_id: string;
+  job_id?: string | null;
+  status: DocumentStatus;
+  progress_percent: number;
+  current_stage: string;
+  error_code?: string | null;
+  error_message?: string | null;
+  attempt_count: number;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Membership {
+  id: string;
+  user_id: string;
+  company_id: string;
+  role: MembershipRole;
+  created_at: string;
+  company?: Company;
+}
+
+export interface AIEmployee {
+  id: string;
+  company_id: string;
+  name: string;
+  role: string;
+  description?: string | null;
+  personality?: string | null;
+  system_prompt?: string | null;
+  language: string;
+  status: AIEmployeeStatus;
+  avatar_config: Record<string, any>;
+  voice_config: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  knowledge_base_ids?: string[];
+  assigned_knowledge_bases?: KnowledgeBase[];
+  tool_names?: string[];
+  tools?: string[];
+  assigned_tools?: AIEmployeeTool[];
+  public_id?: string | null;
+  is_published?: boolean;
+  allowed_domains?: string[];
+  widget_config?: Record<string, any>;
+}
+
+export interface KnowledgeBase {
+  id: string;
+  company_id: string;
+  name: string;
+  description?: string | null;
+  status: KnowledgeBaseStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentItem {
+  id: string;
+  company_id: string;
+  knowledge_base_id: string;
+  filename: string;
+  original_filename: string;
+  file_type: string;
+  mime_type: string;
+  file_size: number;
+  status: DocumentStatus;
+  chunk_count?: number;
+  total_chunks?: number;
+  error_message?: string | null;
+  document_metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentChunkItem {
+  id: string;
+  company_id: string;
+  knowledge_base_id: string;
+  document_id: string;
+  chunk_index: number;
+  content: string;
+  token_count: number;
+  page_number?: number | null;
+  header_path?: string | null;
+  chunk_metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  company?: Company | null;
+  token: {
+    access_token: string;
+    token_type: string;
+  };
+}
+
+export interface ApiError {
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface Conversation {
+  id: string;
+  company_id: string;
+  ai_employee_id: string;
+  user_id?: string | null;
+  title: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Citation {
+  chunk_id: string;
+  document_id: string;
+  document_name: string;
+  page_number?: number | null;
+  header_path?: string | null;
+  score: number;
+  preview?: string | null;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  permission: 'READ' | 'WRITE';
+  input_schema: Record<string, any>;
+}
+
+export interface AIEmployeeTool {
+  id: string;
+  company_id?: string;
+  ai_employee_id: string;
+  tool_name: string;
+  created_at: string;
+}
+
+export interface PendingToolAction {
+  id: string;
+  company_id: string;
+  ai_employee_id: string;
+  conversation_id: string;
+  tool_name: string;
+  validated_arguments: Record<string, any>;
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED';
+  expires_at: string;
+  created_at: string;
+}
+
+export interface PendingConfirmation {
+  pending_action_id: string;
+  tool_name: string;
+  arguments: Record<string, any>;
+  message?: string;
+}
+
+export interface Order {
+  id: string;
+  company_id: string;
+  order_number: string;
+  customer_identifier: string;
+  status: string;
+  items: Array<{ sku: string; name: string; qty: number; price: number }>;
+  total: number;
+  tracking_number?: string | null;
+  created_at: string;
+}
+
+export interface Lead {
+  id: string;
+  company_id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  interest?: string | null;
+  source: string;
+  status: string;
+  created_at: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  company_id: string;
+  ticket_number: string;
+  customer_email: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  company_id: string;
+  role: 'USER' | 'ASSISTANT' | 'SYSTEM';
+  content: string;
+  citations: Citation[];
+  message_metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface ChatResponse {
+  user_message: Message;
+  assistant_message: Message;
+  citations: Citation[];
+  tool_calls: Array<Record<string, any>>;
+  pending_confirmation?: PendingConfirmation | null;
+  metrics: Record<string, any>;
+}
+
+export interface EmployeeEmbedCodeResponse {
+  public_id: string;
+  is_published: boolean;
+  widget_script_url: string;
+  embed_snippet: string;
+  preview_url: string;
+  allowed_domains: string[];
+  widget_config: Record<string, any>;
+}
+
+export interface EmployeePublishRequest {
+  is_published?: boolean;
+  allowed_domains?: string[];
+}
+
+export interface EmployeeWidgetConfigRequest {
+  primary_color?: string;
+  theme?: string;
+  position?: string;
+  brand_name?: string;
+  welcome_message?: string;
+  logo_url?: string;
+  allowed_domains?: string[];
+}
+
+export interface PublicEmployeeConfig {
+  public_id: string;
+  name: string;
+  role: string;
+  description?: string | null;
+  language: string;
+  avatar_config: Record<string, any>;
+  widget_config: Record<string, any>;
+}
+
+export interface VoiceDefinition {
+  id: string;
+  name: string;
+  gender?: string;
+  description?: string;
+}
+
+export interface AvailableVoicesResponse {
+  provider: string;
+  voices: VoiceDefinition[];
+}
+
+export interface EvaluationResultItem {
+  id: string;
+  evaluation_run_id: string;
+  query_id: string;
+  query_text: string;
+  category?: string | null;
+  is_answerable: boolean;
+  expected_chunk_ids: string[];
+  retrieved_chunk_ids: string[];
+  retrieved_scores: number[];
+  recall_at_1?: number | null;
+  recall_at_3?: number | null;
+  recall_at_5?: number | null;
+  precision_at_1?: number | null;
+  precision_at_3?: number | null;
+  precision_at_5?: number | null;
+  reciprocal_rank?: number | null;
+  ndcg_at_5?: number | null;
+  generated_answer?: string | null;
+  reference_answer?: string | null;
+  faithfulness_score?: number | null;
+  answer_relevance_score?: number | null;
+  refusal_correct?: boolean | null;
+  retrieval_latency_ms?: number | null;
+  generation_latency_ms?: number | null;
+  total_latency_ms?: number | null;
+}
+
+export interface EvaluationRun {
+  id: string;
+  company_id: string;
+  ai_employee_id: string;
+  dataset_name: string;
+  total_queries: number;
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  metrics_summary: Record<string, any>;
+  duration_seconds?: number | null;
+  error_message?: string | null;
+  regression_passed?: boolean | null;
+  recall_at_1?: number | null;
+  recall_at_3?: number | null;
+  recall_at_5?: number | null;
+  precision_at_1?: number | null;
+  precision_at_3?: number | null;
+  precision_at_5?: number | null;
+  mrr?: number | null;
+  ndcg_at_5?: number | null;
+  faithfulness?: number | null;
+  answer_relevance?: number | null;
+  answer_relevance_score?: number | null;
+  refusal_correctness?: number | null;
+  refusal_accuracy?: number | null;
+  avg_latency_ms?: number | null;
+  ai_employee?: AIEmployee;
+  created_at: string;
+  completed_at?: string | null;
+  items?: EvaluationResultItem[];
+}
+
+export interface EvaluationBaseline {
+  baseline_run_id?: string | null;
+  dataset_name?: string | null;
+  metrics: Record<string, any>;
+  created_at?: string | null;
+}
+
+// Phase 11-13: Control Plane Types
+export interface LatencyStats {
+  avg: number;
+  p50: number;
+  p95: number;
+  p99: number;
+}
+
+export interface Span {
+  name: string;
+  trace_id: string;
+  span_id: string;
+  parent_span_id?: string | null;
+  duration_ms: number;
+  status: 'OK' | 'ERROR' | string;
+  status_description?: string | null;
+  attributes: Record<string, any>;
+  events: Array<{ name: string; timestamp: string; attributes?: Record<string, any> }>;
+  start_time: string;
+}
+
+export interface TraceSummary {
+  id: string;
+  company_id: string;
+  ai_employee_id?: string | null;
+  conversation_id?: string | null;
+  trace_id: string;
+  request_type: string;
+  status: 'SUCCESS' | 'ERROR' | string;
+  total_latency_ms: number;
+  spans_count: number;
+  spans_data: Span[];
+  safe_metadata: Record<string, any>;
+  error_message?: string | null;
+  created_at: string;
+}
+
+export interface OperationalMetrics {
+  requests_total: number;
+  requests_success: number;
+  requests_error: number;
+  error_rate_percent: number;
+  budget_denials_total: number;
+  rate_limit_denials_total: number;
+  latencies_ms: {
+    total: LatencyStats;
+    retrieval: LatencyStats;
+    llm: LatencyStats;
+    tools: LatencyStats;
+  };
+}
+
+export interface AuditEvent {
+  id: string;
+  company_id: string;
+  actor_id?: string | null;
+  ai_employee_id?: string | null;
+  event_type: string;
+  resource_type: string;
+  resource_id?: string | null;
+  trace_id?: string | null;
+  safe_metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface BudgetStatus {
+  id: string;
+  name: string;
+  ai_employee_id?: string | null;
+  period: string;
+  limit_amount: number;
+  current_spend: number;
+  utilization_percent: number;
+  soft_limit_percent: number;
+  hard_limit_enabled: boolean;
+  exceeded: boolean;
+}
+
+export interface UsageModelBreakdown {
+  model: string;
+  tokens: number;
+  cost: number;
+  estimated_cost?: number;
+  requests?: number;
+}
+
+export interface UsageSummary {
+  time_window_days: number;
+  requests_count: number;
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  total_estimated_cost: number;
+  currency: string;
+  by_model: UsageModelBreakdown[];
+  by_source: Array<{ source: string; tokens: number; requests: number }>;
+  budgets: BudgetStatus[];
+}
+
+export interface UsageLedgerEntry {
+  id: string;
+  company_id: string;
+  ai_employee_id?: string | null;
+  conversation_id?: string | null;
+  trace_id?: string | null;
+  provider: string;
+  model: string;
+  operation_type: string;
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  total_tokens: number;
+  estimated_cost: number;
+  currency: string;
+  cost_status: string;
+  usage_source: string;
+  created_at: string;
+}
+
+export interface UsageBudget {
+  id: string;
+  company_id: string;
+  ai_employee_id?: string | null;
+  budget_name: string;
+  limit_amount: number;
+  currency: string;
+  period_type: string;
+  soft_limit_percent: number;
+  hard_limit_enabled: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+
