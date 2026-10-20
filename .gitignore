@@ -34,6 +34,8 @@ venv/
 .venv/
 *.db
 *.sqlite3
+.pytest_cache/
+
 
 # Qdrant / Storage
 qdrant_storage/
