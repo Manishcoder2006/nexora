@@ -31,26 +31,33 @@ async def lifespan(app: FastAPI):
     except Exception as ie:
         logger.warning(f"Embedding dimension invariant check: {ie}")
 
-    # Initialize database tables automatically for all database backends
-    import app.models  # noqa: F401 - register all models with Base.metadata
-    from app.models.base import Base
+    # Initialize database tables automatically for non-production environments
+    if settings.ENVIRONMENT != "production":
+        import app.models  # noqa: F401 - register all models with Base.metadata
+        from app.models.base import Base
 
-    def _sync_sqlite_schema(sync_conn):
-        for table_name, table in Base.metadata.tables.items():
-            res = sync_conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
-            if not res:
-                continue
-            existing_cols = {row[1] for row in res}
-            for col in table.columns:
-                if col.name not in existing_cols:
-                    col_type = col.type.compile(sync_conn.dialect)
-                    sync_conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type}"))
+        def _sync_sqlite_schema(sync_conn):
+            for table_name, table in Base.metadata.tables.items():
+                res = sync_conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+                if not res:
+                    continue
+                existing_cols = {row[1] for row in res}
+                for col in table.columns:
+                    if col.name not in existing_cols:
+                        col_type = col.type.compile(sync_conn.dialect)
+                        sync_conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type}"))
 
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        if "sqlite" in settings.DATABASE_URL:
-            await conn.run_sync(_sync_sqlite_schema)
-    logger.info("Database schema verified and synchronized.")
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            if "sqlite" in settings.DATABASE_URL:
+                await conn.run_sync(_sync_sqlite_schema)
+        logger.info("Database schema verified and synchronized for development.")
+    else:
+        # In production, schema is strictly governed by Alembic migrations; verify connection only
+        async with async_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        logger.info("Production database connection verified; schema management governed by Alembic migrations.")
+
 
     # Automatically seed the Demo Account & Knowledge Bases on startup if not in production
     if settings.ENVIRONMENT != "production":

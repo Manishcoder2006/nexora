@@ -26,7 +26,8 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/nexora_platform"
-    DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@localhost:5432/nexora_platform"
+    DATABASE_SYNC_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/nexora_platform"
+
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -131,11 +132,18 @@ class Settings(BaseSettings):
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
-        elif isinstance(v, (list, str)):
-            return v
+        return v
+
+    @field_validator("DATABASE_SYNC_URL", mode="before")
+    @classmethod
+    def assemble_sync_db_url(cls, v: str) -> str:
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return v
+
     @model_validator(mode="after")
     def check_production_secrets(self) -> "Settings":
         if self.ENVIRONMENT == "production":
